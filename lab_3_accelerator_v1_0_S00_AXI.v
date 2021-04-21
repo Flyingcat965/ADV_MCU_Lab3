@@ -94,7 +94,7 @@
 		input wire  S_AXI_RREADY
 	);
 	parameter rst = 0, detect = 1, read1 = 2, read2 = 3, send = 4, checkfull = 5,
-				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10;
+				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10, between_read = 11;
 	// AXI4LITE signals
 
 	reg [C_S_AXI_ADDR_WIDTH-1 : 0] 	axi_awaddr;
@@ -200,7 +200,7 @@
 	wire			buffer_full;
 	wire [511:0]	out;
 	wire 			out_ready;
-	assign byte_num = keccak_byte_total%64
+	assign byte_num = keccak_byte_total%8
 	
   //
     
@@ -827,7 +827,11 @@
 				else if(flag)
 					next_state = pad;
 				else 
-					next_state = read2;
+					next_state = between_read;
+			end
+			between_read:
+			begin 
+				next_state = read2;
 			end
 			read2:
 			begin
@@ -937,6 +941,18 @@
 					flag = 0;
 			
 			end
+			between_read:
+			begin
+				reset = 0;
+				in = in;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = keccak_bram_addr_start + counter;
+				flag = flag;
+				counter = counter;
+			
+			end
 			read2:
 			begin
 				reset = 0;
@@ -1020,7 +1036,7 @@
 			sendempty:
 			begin
 				reset = 0;
-				in = in;
+				in = 0;
 				in_ready = 1;
 				is_last = 1;
 				keccak_start_read = 0;
@@ -1031,7 +1047,7 @@
 			checkfull_e:
 			begin
 				reset = 0;
-				in = in;
+				in = 0;
 				in_ready = 1;
 				is_last = 1;
 				keccak_start_read = 0;
@@ -1060,7 +1076,7 @@
         .out_ready(out_ready)
     );
 	
-     BRAM_IF  MI(
+/*      BRAM_IF  MI(
             // DEBUG    
                 .bram_write_data(bram_write_data),          // Debug  -- need to remove
                 .STATE(STATE),                              // Debug  -- need to remove
@@ -1090,7 +1106,7 @@
                 .rst_BRAM(rst_BRAM),                        // Reset to BRAM
                 .we_BRAM(we_BRAM)                           // Write enable to the BRAM
 	);
-
+ */
 	// User logic ends
 
 	endmodule
