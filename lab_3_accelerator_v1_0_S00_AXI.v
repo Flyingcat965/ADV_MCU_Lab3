@@ -14,8 +14,7 @@
 		parameter integer C_S_AXI_ADDR_WIDTH	= 7
 	)
 	(
-		parameter rst = 0, detect = 1, read1 = 2, read2 = 3, send = 4, checkfull = 5,
-				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10;
+		
 		// Users to add ports here
         output  wire [31:0]     addr_BRAM,
         output  wire            clk_BRAM,
@@ -24,7 +23,12 @@
         output  wire            en_BRAM,
         output  wire            rst_BRAM,
         output  wire [3:0]      we_BRAM,
-        output  reg             interrupt_out,		
+        output  reg             interrupt_out,	
+		input  reg  [31:0] 		slv_reg0_io,
+		input  reg  [31:0] 		slv_reg5_io,
+		input  reg  [31:0] 		slv_reg6_io,
+		output  reg  [31:0] 	slv_reg1_io,
+		output reg  [511:0]		slv_reg16_31
 		// User ports ends
 		// Do not modify the ports beyond this line
 
@@ -89,8 +93,10 @@
     		// accept the read data and response information.
 		input wire  S_AXI_RREADY
 	);
-
+	parameter rst = 0, detect = 1, read1 = 2, read2 = 3, send = 4, checkfull = 5,
+				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10;
 	// AXI4LITE signals
+
 	reg [C_S_AXI_ADDR_WIDTH-1 : 0] 	axi_awaddr;
 	reg  	axi_awready;
 	reg  	axi_wready;
@@ -211,6 +217,10 @@
 
 // end user added internal wires
 	// I/O Connections assignments
+	
+	assign slv_reg16_31 = out;
+	assign slv_reg1_io = slv_reg1;
+		
 
 	assign S_AXI_AWREADY	= axi_awready;
 	assign S_AXI_WREADY	= axi_wready;
@@ -578,13 +588,13 @@
 	                slv_reg31[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 	              end  
 	          default : begin
-	                      slv_reg0 <= slv_reg0;
+	                      slv_reg0 <= slv_reg0_io;
 	                      slv_reg1 <= slv_reg1;
 	                      slv_reg2 <= slv_reg2;
 	                      slv_reg3 <= slv_reg3;
 	                      slv_reg4 <= slv_reg4;
-	                      slv_reg5 <= slv_reg5;
-	                      slv_reg6 <= slv_reg6;
+	                      slv_reg5 <= slv_reg5_io;
+	                      slv_reg6 <= slv_reg6_io;
 	                      slv_reg7 <= slv_reg7;
 	                      slv_reg8 <= slv_reg8;
 	                      slv_reg9 <= slv_reg9;
