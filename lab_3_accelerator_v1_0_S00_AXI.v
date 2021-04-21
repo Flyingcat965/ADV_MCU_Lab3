@@ -179,6 +179,7 @@
     reg [4:0] state ;
 	reg [4:0] next_state;
 	reg [31:0] counter;
+	reg flag;
 
   
 	
@@ -811,39 +812,74 @@
 			end
 			read1:
 			begin
-				
+				if(bram_complete == 0)
+					next_state = read1;
+				else if(flag)
+					next_state = pad;
+				else 
+					next_state = read2;
 			end
 			read2:
 			begin
+				if(bram_complete == 0)
+					next_state = read2;
+				else if(flag)
+					next_state = send_last;
+				else 
+					next_state = send;
 			
 			end
 			send:
 			begin
-			
+				if(buffer_full == 1)
+					next_state = checkfull;
+				else
+					next_state = read1;
 			end
 			checkfull:
 			begin
-			
+				if(buffer_full == 1)
+					next_state = checkfull;
+				else
+					next_state = read1;
 			end
 			pad:
 			begin
+				next_state = send_last;
 			
 			end
 			send_last:
 			begin
-			
+				if(buffer_full == 1)
+					next_state = checkfull_l;
+				else if(byte_num != 0) 
+					next_state = rst;
+				else
+					next_state = sendempty;
 			end
 			checkfull_l:
 			begin
-			
+				if(buffer_full == 1)
+					next_state = checkfull_l;
+				else if(byte_num != 0) 
+					next_state = rst;
+				else
+					next_state = sendempty;
 			end
 			sendempty:
 			begin
-			
+				if(buffer_full == 1)
+					next_state = checkfull_E;
+				else (byte_num != 0) 
+					next_state = rst;
+				
 			end
 			checkfull_e:
 			begin
-			
+				if(buffer_full == 1)
+					next_state = checkfull_E;
+				else (byte_num != 0) 
+					next_state = rst;
 			end
 	
 	
@@ -854,46 +890,144 @@
 		case(state)
 			rst:
 			begin
-			
+				reset = 1;
+				in = 0;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = 0;
+				
 			end
 			detect:
 			begin
+				reset = 0;
+				in = 0;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = 0;
 			
 			end
 			read1:
 			begin
+				reset = 0;
+				in[31:0] = keccak_bram_read_data;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 1;
+				keccak_bram_addr = keccak_bram_addr_start + counter;
+				counter = counter + 4;
+				if(counter >= keccak_byte_total )
+					flag = 1;
+				else
+					flag = 0;
 			
 			end
 			read2:
 			begin
+				reset = 0;
+				in[63:32] = keccak_bram_read_data;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 1;
+				keccak_bram_addr = keccak_bram_addr_start + counter;
+				counter = counter + 4;
+				if(counter >= keccak_byte_total )
+					flag = 1;
+				else
+					flag = 0;
 			
 			end
 			send:
 			begin
+				reset = 0;
+				in = in;
+				in_ready = 1;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = counter;
 			
 			end
 			checkfull:
 			begin
-			
+				reset = 0;
+				in = in;
+				in_ready = 1;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = counter;
 			end
 			pad:
 			begin
+				reset = 0;
+				in = in;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = counter;
 			
 			end
 			send_last:
 			begin
+				reset = 0;
+				in = in;
+				in_ready = 1;
+				if(byte_num == 0)
+					is_last = 0;
+				else 
+					is_last = 1;
+				
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = counter;
 			
 			end
 			checkfull_l:
 			begin
-			
+				reset = 0;
+				in = in;
+				in_ready = 1;
+				if(byte_num == 0)
+					is_last = 0;
+				else 
+					is_last = 1;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = counter;
 			end
 			sendempty:
 			begin
-			
+				reset = 0;
+				in = in;
+				in_ready = 1;
+				is_last = 1;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = counter;
 			end
 			checkfull_e:
 			begin
+				reset = 0;
+				in = in;
+				in_ready = 1;
+				is_last = 1;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = counter;
 			
 			end
 	
