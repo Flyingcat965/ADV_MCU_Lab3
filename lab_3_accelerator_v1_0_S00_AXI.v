@@ -13,7 +13,7 @@
 		// Width of S_AXI address bus
 		parameter integer C_S_AXI_ADDR_WIDTH	= 7,
 		parameter rst = 0, detect = 1, read1 = 2, read2 = 3, send = 4, checkfull = 5,
-				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10, between_read = 11
+				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10, between_read = 11, idle = 12
 	)
 	(
 
@@ -44,7 +44,7 @@
 		// Global Reset Signal. This Signal is Active LOW
 		input wire  S_AXI_ARESETN
 	);
-	
+
 	// AXI4LITE signals
 
 	// Write address (issued by master, acceped by Slave)
@@ -222,7 +222,7 @@
 	// I/O Connections assignments
 
 	assign slv_reg16_31 = out;
-	assign slv_reg1_io = slv_reg1;
+	assign slv_reg1_io = {31'h11110000, out_ready};
 
 
 	assign S_AXI_AWREADY	= axi_awready;
@@ -363,6 +363,9 @@
 	      slv_reg31 <= 0;
 	    end
 	  else begin
+		  slv_reg0 <= slv_reg0_io;
+		  slv_reg5 <= slv_reg5_io;
+		  slv_reg6 <= slv_reg6_io;
 	    if (slv_reg_wren)
 	      begin
 	        case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )
@@ -870,7 +873,7 @@
 				if(buffer_full == 1)
 					next_state = checkfull_l;
 				else if(byte_num != 0)
-					next_state = rst;
+					next_state = idle;
 				else
 					next_state = sendempty;
 			end
@@ -879,7 +882,7 @@
 				if(buffer_full == 1)
 					next_state = checkfull_l;
 				else if(byte_num != 0)
-					next_state = rst;
+					next_state = idle;
 				else
 					next_state = sendempty;
 			end
@@ -887,8 +890,8 @@
 			begin
 				if(buffer_full == 1)
 					next_state = checkfull_e;
-				else 
-					next_state = rst;
+				else
+					next_state = idle;
 
 			end
 			checkfull_e:
@@ -896,9 +899,19 @@
 				if(buffer_full == 1)
 					next_state = checkfull_e;
 				else
-					next_state = rst;
+					next_state = idle;
 			end
-
+			idle:
+			begin
+				if(out_ready == 1)
+					next_state = detect;
+				else
+					next_state = idle;
+			end
+			default:
+				begin
+				next_state = rst;
+				end
         endcase
 	end
 
@@ -927,7 +940,17 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-
+			end
+			idle:
+			begin
+				reset = 0;
+				in = 0;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = 0;
 			end
 			read1:
 			begin
@@ -1059,7 +1082,17 @@
 				counter = counter;
 
 			end
-
+			default:
+			begin
+				reset = 1;
+				in = 0;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = 0;
+				counter = 0;
+			end
         endcase
 	end
 
