@@ -25,7 +25,7 @@
         output  wire            en_BRAM,
         output  wire            rst_BRAM,
         output  wire [3:0]      we_BRAM,
-        output  reg             interrupt_out,		
+        output  wire             interrupt_out,		
 		// User ports ends
 		// Do not modify the ports beyond this line
 
@@ -168,8 +168,8 @@
 
 	//useful
 	wire            bram_complete;  
-    wire            keccak_start_read;
-    wire [31:0]     keccak_bram_addr;
+    reg            keccak_start_read;
+    reg [31:0]     keccak_bram_addr;
     wire [31:0]     keccak_bram_read_data; 
 	
 	// data feeding state machine controls
@@ -213,6 +213,7 @@
 
 // end user added internal wires
 	// I/O Connections assignments
+	assign interrupt_out = out_ready;
 
 	assign S_AXI_AWREADY	= axi_awready;
 	assign S_AXI_WREADY	= axi_wready;
