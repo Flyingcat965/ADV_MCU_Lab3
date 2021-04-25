@@ -809,7 +809,7 @@
     reg [4:0] state ;
 	reg [4:0] next_state; */
 	//state transition logic
-	always@(state)
+	always@(*)
 	begin
 		case(state)
 			rst:
@@ -959,13 +959,13 @@
 			read1:
 			begin
 				reset = 0;
-				in[63:32] = keccak_bram_read_data;
+				in = in;
 				in_ready = 0;
 				is_last = 0;
 				keccak_start_read = 1;
 				keccak_bram_addr = keccak_bram_addr_start + counter;
 				counter = counter + 4;
-			//	old_counter = old_counter;						
+			//	old_counter = old_counter;
 				if(counter >= keccak_byte_total )
 					flag = 1;
 				else
@@ -976,6 +976,7 @@
 			begin
 				reset = 0;
 				in = in;
+				in[63:32] = keccak_bram_read_data;
 				in_ready = 0;
 				is_last = 0;
 				keccak_start_read = 0;
@@ -988,13 +989,13 @@
 			read2:
 			begin
 				reset = 0;
-				in[31:0] = keccak_bram_read_data;
+
 				in_ready = 0;
 				is_last = 0;
 				keccak_start_read = 1;
 				keccak_bram_addr = keccak_bram_addr_start + counter;
 				counter = counter + 4;
-			//	old_counter = old_counter;		
+			//	old_counter = old_counter;
 				if(counter >= keccak_byte_total )
 					flag = 1;
 				else
@@ -1004,7 +1005,7 @@
 			send:
 			begin
 				reset = 0;
-				in = in;
+				in[31:0] = keccak_bram_read_data;
 				in_ready = 1;
 				is_last = 0;
 				keccak_start_read = 0;
