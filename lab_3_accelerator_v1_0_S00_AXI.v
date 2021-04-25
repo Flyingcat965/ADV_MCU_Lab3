@@ -25,7 +25,7 @@
         output  wire            en_BRAM,
         output  wire            rst_BRAM,
         output  wire [3:0]      we_BRAM,
-        output  reg             interrupt_out,
+        output  wire             interrupt_out,
 		input  wire  [31:0] 		slv_reg0_io,
 		input  wire  [31:0] 		slv_reg5_io,
 		input  wire  [31:0] 		slv_reg6_io,
@@ -872,7 +872,7 @@
 			send_last:
 			begin
 				if(buffer_full == 1)
-					next_state = idle;
+					next_state = checkfull_l;
 				else if(byte_num != 0)
 					next_state = idle;
 				else
@@ -965,6 +965,7 @@
 				keccak_start_read = 1;
 				keccak_bram_addr = keccak_bram_addr_start + counter;
 				counter = old_counter + 4;
+				old_counter = old_counter;						
 				if(counter >= keccak_byte_total )
 					flag = 1;
 				else
@@ -993,6 +994,7 @@
 				keccak_start_read = 1;
 				keccak_bram_addr = keccak_bram_addr_start + counter;
 				counter = old_counter + 4;
+				old_counter = old_counter;		
 				if(counter >= keccak_byte_total )
 					flag = 1;
 				else
