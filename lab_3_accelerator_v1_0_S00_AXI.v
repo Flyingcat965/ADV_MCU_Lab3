@@ -833,7 +833,7 @@
 				if(bram_complete == 0)
 					next_state = read1;
 				else 
-					next_state = read_refresh1
+					next_state = read_refresh1;
 			end
 			read_refresh1:
 			begin
