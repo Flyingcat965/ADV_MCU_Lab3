@@ -183,7 +183,7 @@
 	reg [31:0] counter;
 	reg [31:0] next_counter;					
 	reg flag;
-
+	reg [31:0] problem ;
   
 	
 	
@@ -737,7 +737,7 @@
 	        5'h0A   : reg_data_out <= {29'h00000000 ,byte_num};
 	        5'h0B   : reg_data_out <= keccak_bram_addr;
 	        5'h0C   : reg_data_out <= next_counter;
-	        5'h0D   : reg_data_out <= slv_reg13;
+	        5'h0D   : reg_data_out <= problem;
 	        5'h0E   : reg_data_out <= slv_reg14;
 	        5'h0F   : reg_data_out <= slv_reg16;
 	        5'h10   : reg_data_out <= out[31:0];
@@ -934,38 +934,22 @@
 			detect:
 			begin
 				reset = 0;
-				in = 0;
-				in_ready = 0;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = 0;
-				flag = 0;
-				counter = 0;
-				next_counter = 0;
+				keccak_bram_addr = keccak_bram_addr_start + counter;
+				problem = 0;
+
 			end
 			idle:
-			begin
-				reset = 0;
-				in = in;
+			begin				
 				in_ready = 0;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
 			end
 			read1:
 			begin
-				reset = 0;
-				in = in;
 				in_ready = 0;
-				is_last = 0;
 				keccak_start_read = 1;
-				keccak_bram_addr = keccak_bram_addr_start + counter;
+				
 				next_counter = counter + 4;
-				counter = counter;
-				if(counter >= keccak_byte_total )
+
+				if(counter + 4 >= keccak_byte_total )
 					flag = 1;
 				else
 					flag = 0;
@@ -973,150 +957,74 @@
 			end
 			read_refresh1:
 			begin
-				reset = 0;
+
 				in[63:32] = keccak_bram_read_data;
-				in_ready = 0;
-				is_last = 0;
 				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = flag;
 				counter = next_counter;	
-				next_counter = next_counter;		
+	
 			end
 			between_read:
 			begin
-				reset = 0;
-				in = in;
-				in_ready = 0;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr_start + counter;
-				flag = flag;
-				counter = counter;
-				next_counter = next_counter;
 
+				keccak_bram_addr = keccak_bram_addr_start + counter;
+				
 			end
 			read2:
 			begin
-				reset = 0;
-				in = in;
-				in_ready = 0;
-				is_last = 0;
 				keccak_start_read = 1;
-				keccak_bram_addr = keccak_bram_addr_start + counter;
 				next_counter = counter + 4;
-				counter = counter;
-				if(counter >= keccak_byte_total )
+
+				if(counter + 4  >= keccak_byte_total )
 					flag = 1;
 				else
 					flag = 0;
-
 			end
 			
 			read_refresh2:
 			begin
-				reset = 0;
 				in[31:0] = keccak_bram_read_data;
-				in_ready = 0;
-				is_last = 0;
 				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = flag;
 				counter = next_counter;
-				next_counter = next_counter;
 			end
 			send:
 			begin
-				reset = 0;
-				in = in;
 				in_ready = 1;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
 
 			end
 			checkfull:
 			begin
-				reset = 0;
-				in = in;
-				in_ready = 1;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
+
 			end
 			pad:
 			begin
-				reset = 0;
-				in = in;
-				in_ready = 0;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
+				
 			end
 			send_last:
 			begin
-				reset = 0;
-				in = in;
+				
 				in_ready = 1;
 				if(byte_num == 0)
 					is_last = 0;
 				else
 					is_last = 1;
 
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
-			
+				
 			end
 			checkfull_l:
 			begin
-				reset = 0;
-				in = in;
-				in_ready = 1;
-				if(byte_num == 0)
-					is_last = 0;
-				else
-					is_last = 1;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
+				
 			end
 			sendempty:
 			begin
-				reset = 0;
+				
 				in = 0;
 				in_ready = 1;
 				is_last = 1;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
+				
 			end
 			checkfull_e:
 			begin
-				reset = 0;
-				in = 0;
-				in_ready = 1;
-				is_last = 1;
-				keccak_start_read = 0;
-				keccak_bram_addr = keccak_bram_addr;
-				flag = 0;
-				counter = counter;
-				next_counter = next_counter;
+				
 			end
 			default:
 			begin
@@ -1129,6 +1037,7 @@
 				flag = 0;
 				counter = 0;
 			//	old_counter = 0;
+				problem = 32'hdeeddead;
 			end
         endcase
 	end
