@@ -832,7 +832,7 @@
 			begin
 				if(bram_complete == 0)
 					next_state = read1;
-				else 
+				else
 					next_state = read_refresh1;
 			end
 			read_refresh1:
@@ -992,7 +992,7 @@
 				keccak_start_read = 0;
 				keccak_bram_addr = 0;
 				flag = flag;
-				counter = counter;			
+				counter = counter;
 			end
 			between_read:
 			begin
@@ -1023,7 +1023,7 @@
 					flag = 0;
 
 			end
-			
+
 			read_refresh2:
 			begin
 				reset = 0;
@@ -1034,7 +1034,7 @@
 				keccak_bram_addr = 0;
 				flag = flag;
 				counter = counter;
-				
+			end
 			send:
 			begin
 				reset = 0;
