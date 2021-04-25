@@ -13,7 +13,8 @@
 		// Width of S_AXI address bus
 		parameter integer C_S_AXI_ADDR_WIDTH	= 7,
 		parameter rst = 0, detect = 1, read1 = 2, read2 = 3, send = 4, checkfull = 5,
-				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10, between_read = 11, idle = 12
+				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10, between_read = 11, idle = 12,
+				  read_refresh1 = 13,read_refresh2 = 14
 	)
 	(
 
@@ -831,7 +832,12 @@
 			begin
 				if(bram_complete == 0)
 					next_state = read1;
-				else if(flag)
+				else 
+					next_state = read_refresh1
+			end
+			read_refresh1:
+			begin
+				if(flag)
 					next_state = pad;
 				else
 					next_state = between_read;
@@ -844,11 +850,16 @@
 			begin
 				if(bram_complete == 0)
 					next_state = read2;
-				else if(flag)
+				else
+					next_state = read_refresh2;
+
+			end
+			read_refresh2:
+			begin
+				if(flag)
 					next_state = send_last;
 				else
 					next_state = send;
-
 			end
 			send:
 			begin
@@ -972,11 +983,21 @@
 					flag = 0;
 
 			end
+			read_refresh1:
+			begin
+				reset = 0;
+				in[63:32] = keccak_bram_read_data;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = flag;
+				counter = counter;			
+			end
 			between_read:
 			begin
 				reset = 0;
 				in = in;
-				in[63:32] = keccak_bram_read_data;
 				in_ready = 0;
 				is_last = 0;
 				keccak_start_read = 0;
@@ -1002,10 +1023,22 @@
 					flag = 0;
 
 			end
-			send:
+			
+			read_refresh2:
 			begin
 				reset = 0;
 				in[31:0] = keccak_bram_read_data;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = 0;
+				flag = flag;
+				counter = counter;
+				
+			send:
+			begin
+				reset = 0;
+				in = in;
 				in_ready = 1;
 				is_last = 0;
 				keccak_start_read = 0;
