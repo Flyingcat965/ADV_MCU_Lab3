@@ -809,7 +809,7 @@
     reg [4:0] state ;
 	reg [4:0] next_state; */
 	//state transition logic
-	always@(*)
+	always@(state)
 	begin
 		case(state)
 			rst:
@@ -916,7 +916,7 @@
         endcase
 	end
 
-	always@(*)
+	always@(state)
 	begin
 		case(state)
 			rst:
@@ -929,7 +929,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-				old_counter = 0;
+				//old_counter = 0;
 
 			end
 			detect:
@@ -942,7 +942,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
 			idle:
 			begin
@@ -954,7 +954,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
 			read1:
 			begin
@@ -964,8 +964,8 @@
 				is_last = 0;
 				keccak_start_read = 1;
 				keccak_bram_addr = keccak_bram_addr_start + counter;
-				counter = old_counter + 4;
-				old_counter = old_counter;						
+				counter = counter + 4;
+			//	old_counter = old_counter;						
 				if(counter >= keccak_byte_total )
 					flag = 1;
 				else
@@ -982,7 +982,7 @@
 				keccak_bram_addr = keccak_bram_addr_start + counter;
 				flag = flag;
 				counter = counter;
-				old_counter = counter;
+			//	old_counter = counter;
 
 			end
 			read2:
@@ -993,8 +993,8 @@
 				is_last = 0;
 				keccak_start_read = 1;
 				keccak_bram_addr = keccak_bram_addr_start + counter;
-				counter = old_counter + 4;
-				old_counter = old_counter;		
+				counter = counter + 4;
+			//	old_counter = old_counter;		
 				if(counter >= keccak_byte_total )
 					flag = 1;
 				else
@@ -1011,7 +1011,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = counter;
-				old_counter = counter;
+			//	old_counter = counter;
 
 			end
 			checkfull:
@@ -1024,7 +1024,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = counter;
-				old_counter = old_counter;
+			///	old_counter = old_counter;
 			end
 			pad:
 			begin
@@ -1036,7 +1036,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
 			send_last:
 			begin
@@ -1052,7 +1052,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;
+			//	old_counter = 0;
 
 			end
 			checkfull_l:
@@ -1068,7 +1068,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
 			sendempty:
 			begin
@@ -1080,7 +1080,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
 			checkfull_e:
 			begin
@@ -1092,7 +1092,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
 			default:
 			begin
@@ -1104,7 +1104,7 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
         endcase
 	end
