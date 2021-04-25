@@ -13,7 +13,8 @@
 		// Width of S_AXI address bus
 		parameter integer C_S_AXI_ADDR_WIDTH	= 7,
 		parameter rst = 0, detect = 1, read1 = 2, read2 = 3, send = 4, checkfull = 5,
-				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10, between_read = 11, idle = 12																	   
+				  pad = 6, send_last = 7, checkfull_l = 8, sendempty = 9, checkfull_e = 10, between_read = 11, idle = 12,read_refresh1 = 13,
+				  read_refresh2 = 14																   
 	)
 	(
 	
@@ -156,31 +157,31 @@
 	//bram statemchine IF
 	//useless stuff
 	wire [31:0]     bram_write_data = 0;                // Debug -- need to remove
-    wire [3:0]      STATE;                          // Debug    
-    reg             axi_start_read= 0 ; //debug
-    reg             axi_start_write = 0;
+	wire [3:0]      STATE;                          // Debug    
+	reg             axi_start_read= 0 ; //debug
+	reg             axi_start_write = 0;
 	wire            axi_clk     =  S_AXI_ACLK;
-    wire            axi_rst     =  S_AXI_ARESETN;
-    wire [31:0]     axi_bram_read_data;
-    wire [31:0]     axi_bram_addr       = 0;
-    wire [31:0]     axi_bram_write_data = 0;
-  
+	wire            axi_rst     =  S_AXI_ARESETN;
+	wire [31:0]     axi_bram_read_data;
+	wire [31:0]     axi_bram_addr       = 0;
+	wire [31:0]     axi_bram_write_data = 0;
+
 
 	//useful
 	wire            bram_complete;  
-    reg            keccak_start_read;
-    reg [31:0]     keccak_bram_addr;
-    wire [31:0]     keccak_bram_read_data; 
+	reg            keccak_start_read;
+	reg [31:0]     keccak_bram_addr;
+	wire [31:0]     keccak_bram_read_data; 
 	
 	// data feeding state machine controls
-	wire [31:0]     keccak_byte_total      = slv_reg5; // Number of byte
-    wire [31:0]     keccak_bram_addr_start = slv_reg6; // Starting address in BRAM
+	wire [31:0]     keccak_byte_total; // Number of byte
+	wire [31:0]     keccak_bram_addr_start; // Starting address in BRAM
 	wire            axi_start_keccak = slv_reg0[0];                  // Start keccak transaction from control register
-    wire            keccak_reset = slv_reg0[1] ;                // Programmable reset from control register
-    reg [4:0] state ;
+	wire            keccak_reset = slv_reg0[1] ;                // Programmable reset from control register
+	reg [4:0] state ;
 	reg [4:0] next_state;
 	reg [31:0] counter;
-	reg [31:0] old_counter;					
+	reg [31:0] next_counter;					
 	reg flag;
 
   
@@ -196,8 +197,10 @@
 	wire			buffer_full;
 	wire [511:0]	out;
 	wire 			out_ready;
+
+	assign keccak_byte_total      = slv_reg5; 
 	assign byte_num = keccak_byte_total%8;
-	
+	assign keccak_bram_addr_start = slv_reg6;
   //
     
 
@@ -724,35 +727,35 @@
 	        5'h00   : reg_data_out <= slv_reg0;
 	        5'h01   : reg_data_out <= {31'h11110000, out_ready};
 	        5'h02   : reg_data_out <= slv_reg2;
-	        5'h03   : reg_data_out <= slv_reg3;
-	        5'h04   : reg_data_out <= slv_reg4;
+	        5'h03   : reg_data_out <= {counter[21:0], state, next_state};
+	        5'h04   : reg_data_out <= keccak_bram_read_data;
 	        5'h05   : reg_data_out <= slv_reg5;
 	        5'h06   : reg_data_out <= slv_reg6;
 	        5'h07   : reg_data_out <= 32'hFEEDBEEF;
-	        5'h08   : reg_data_out <= out[31:0];
-	        5'h09   : reg_data_out <= out[63:32];
-	        5'h0A   : reg_data_out <= out[95:64];
-	        5'h0B   : reg_data_out <= out[127:96];
-	        5'h0C   : reg_data_out <= out[159:128];
-	        5'h0D   : reg_data_out <= out[191:160];
-	        5'h0E   : reg_data_out <= out[223:192];
-	        5'h0F   : reg_data_out <= out[255:224];
-	        5'h10   : reg_data_out <= out[287:256];
-	        5'h11   : reg_data_out <= out[319:288];
-	        5'h12   : reg_data_out <= out[32*11-1:32*10];
-	        5'h13   : reg_data_out <= out[32*12-1:32*11];
-	        5'h14   : reg_data_out <= out[32*13-1:32*12];
-	        5'h15   : reg_data_out <= out[32*14-1:32*13];
-	        5'h16   : reg_data_out <= out[32*15-1:32*14];
-	        5'h17   : reg_data_out <= out[32*16-1:32*15];
-	        5'h18   : reg_data_out <= slv_reg24;
-	        5'h19   : reg_data_out <= slv_reg25;
-	        5'h1A   : reg_data_out <= slv_reg26;
-	        5'h1B   : reg_data_out <= slv_reg27;
-	        5'h1C   : reg_data_out <= slv_reg28;
-	        5'h1D   : reg_data_out <= slv_reg29;
-	        5'h1E   : reg_data_out <= slv_reg30;
-	        5'h1F   : reg_data_out <= slv_reg31;
+	        5'h08   : reg_data_out <= in[31:0];
+	        5'h09   : reg_data_out <= in[63:32];
+	        5'h0A   : reg_data_out <= {29'h00000000 ,byte_num};
+	        5'h0B   : reg_data_out <= keccak_bram_addr;
+	        5'h0C   : reg_data_out <= next_counter;
+	        5'h0D   : reg_data_out <= slv_reg13;
+	        5'h0E   : reg_data_out <= slv_reg14;
+	        5'h0F   : reg_data_out <= slv_reg16;
+	        5'h10   : reg_data_out <= out[31:0];
+	        5'h11   : reg_data_out <= out[63:32];
+	        5'h12   : reg_data_out <= out[95:64];
+	        5'h13   : reg_data_out <= out[127:96];
+	        5'h14   : reg_data_out <= out[159:128];
+	        5'h15   : reg_data_out <= out[191:160];
+	        5'h16   : reg_data_out <= out[223:192];
+	        5'h17   : reg_data_out <= out[255:224];
+	        5'h18   : reg_data_out <= out[287:256];
+	        5'h19   : reg_data_out <= out[319:288];
+	        5'h1A   : reg_data_out <= out[32*11-1:32*10];
+	        5'h1B   : reg_data_out <= out[32*12-1:32*11];
+	        5'h1C   : reg_data_out <= out[32*13-1:32*12];
+	        5'h1D   : reg_data_out <= out[32*14-1:32*13];
+	        5'h1E   : reg_data_out <= out[32*15-1:32*14];
+	        5'h1F   : reg_data_out <= out[32*16-1:32*15];
 	        default : reg_data_out <= 0;
 	      endcase
 	end
@@ -795,31 +798,36 @@
     reg [4:0] state ;
 	reg [4:0] next_state; */
 	//state transition logic
-	always@(*)
+		always@(*)
 	begin
 		case(state)
 			rst:
 			begin
 				if(axi_rst == 0 || keccak_reset == 1)
 					next_state = rst;
-				else 
+				else
 					next_state = detect;
-			
+
 			end
 			detect:
 			begin
 				if(axi_start_keccak == 1)
 					next_state = read1;
-				else 
-					next_state = detect;	
+				else
+					next_state = detect;
 			end
 			read1:
 			begin
 				if(bram_complete == 0)
 					next_state = read1;
-				else if(flag)
-					next_state = pad;
 				else 
+					next_state = read_refresh1;
+			end
+			read_refresh1:
+			begin
+				if(flag)
+					next_state = pad;
+				else
 					next_state = between_read;
 			end
 			between_read:
@@ -830,11 +838,16 @@
 			begin
 				if(bram_complete == 0)
 					next_state = read2;
-				else if(flag)
+				else
+					next_state = read_refresh2;
+
+			end
+			read_refresh2:
+			begin
+				if(flag)
 					next_state = send_last;
-				else 
+				else
 					next_state = send;
-			
 			end
 			send:
 			begin
@@ -853,13 +866,13 @@
 			pad:
 			begin
 				next_state = send_last;
-			
+
 			end
 			send_last:
 			begin
 				if(buffer_full == 1)
-					next_state = idle;
-				else if(byte_num != 0) 
+					next_state = checkfull_l;
+				else if(byte_num != 0)
 					next_state = idle;
 				else
 					next_state = sendempty;
@@ -868,7 +881,7 @@
 			begin
 				if(buffer_full == 1)
 					next_state = checkfull_l;
-				else if(byte_num != 0) 
+				else if(byte_num != 0)
 					next_state = idle;
 				else
 					next_state = sendempty;
@@ -877,9 +890,9 @@
 			begin
 				if(buffer_full == 1)
 					next_state = idle;
-				else 
+				else
 					next_state = idle;
-				
+
 			end
 			checkfull_e:
 			begin
@@ -900,10 +913,9 @@
 				next_state = rst;
 				end
         endcase
-	
 	end
-	
-	always@(*)
+
+	always@(state)
 	begin
 		case(state)
 			rst:
@@ -916,7 +928,8 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-				old_counter = 0;
+				next_counter = 0;
+
 			end
 			detect:
 			begin
@@ -928,34 +941,47 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-				old_counter = 0;
+				next_counter = 0;
 			end
 			idle:
 			begin
 				reset = 0;
-				in = 0;
+				in = in;
 				in_ready = 0;
 				is_last = 0;
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
-				counter = 0;
-				old_counter = 0;
+				counter = counter;
+				next_counter = next_counter;
 			end
 			read1:
+			begin
+				reset = 0;
+				in = in;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 1;
+				keccak_bram_addr = keccak_bram_addr_start + counter;
+				next_counter = counter + 4;
+				counter = counter;
+				if(counter >= keccak_byte_total )
+					flag = 1;
+				else
+					flag = 0;
+
+			end
+			read_refresh1:
 			begin
 				reset = 0;
 				in[63:32] = keccak_bram_read_data;
 				in_ready = 0;
 				is_last = 0;
-				keccak_start_read = 1;
-				keccak_bram_addr = keccak_bram_addr_start + counter;
-				counter = old_counter + 4;
-				if(counter >= keccak_byte_total )
-					flag = 1;
-				else
-					flag = 0;
-			
+				keccak_start_read = 0;
+				keccak_bram_addr = keccak_bram_addr;
+				flag = flag;
+				counter = next_counter;	
+				next_counter = next_counter;		
 			end
 			between_read:
 			begin
@@ -967,23 +993,37 @@
 				keccak_bram_addr = keccak_bram_addr_start + counter;
 				flag = flag;
 				counter = counter;
-				old_counter = counter;
+				next_counter = next_counter;
 
 			end
 			read2:
 			begin
 				reset = 0;
-				in[31:0] = keccak_bram_read_data;
+				in = in;
 				in_ready = 0;
 				is_last = 0;
 				keccak_start_read = 1;
 				keccak_bram_addr = keccak_bram_addr_start + counter;
-				counter = old_counter + 4;
+				next_counter = counter + 4;
+				counter = counter;
 				if(counter >= keccak_byte_total )
 					flag = 1;
 				else
 					flag = 0;
+
+			end
 			
+			read_refresh2:
+			begin
+				reset = 0;
+				in[31:0] = keccak_bram_read_data;
+				in_ready = 0;
+				is_last = 0;
+				keccak_start_read = 0;
+				keccak_bram_addr = keccak_bram_addr;
+				flag = flag;
+				counter = next_counter;
+				next_counter = next_counter;
 			end
 			send:
 			begin
@@ -992,11 +1032,11 @@
 				in_ready = 1;
 				is_last = 0;
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
 				counter = counter;
-				old_counter = counter;		  
-			
+				next_counter = next_counter;
+
 			end
 			checkfull:
 			begin
@@ -1005,10 +1045,10 @@
 				in_ready = 1;
 				is_last = 0;
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
 				counter = counter;
-				old_counter = old_counter;			  
+				next_counter = next_counter;
 			end
 			pad:
 			begin
@@ -1017,10 +1057,10 @@
 				in_ready = 0;
 				is_last = 0;
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;
+				next_counter = next_counter;
 			end
 			send_last:
 			begin
@@ -1029,14 +1069,14 @@
 				in_ready = 1;
 				if(byte_num == 0)
 					is_last = 0;
-				else 
+				else
 					is_last = 1;
-				
+
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;	
+				next_counter = next_counter;
 			
 			end
 			checkfull_l:
@@ -1046,13 +1086,13 @@
 				in_ready = 1;
 				if(byte_num == 0)
 					is_last = 0;
-				else 
+				else
 					is_last = 1;
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;	
+				next_counter = next_counter;
 			end
 			sendempty:
 			begin
@@ -1061,10 +1101,10 @@
 				in_ready = 1;
 				is_last = 1;
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;	
+				next_counter = next_counter;
 			end
 			checkfull_e:
 			begin
@@ -1073,10 +1113,10 @@
 				in_ready = 1;
 				is_last = 1;
 				keccak_start_read = 0;
-				keccak_bram_addr = 0;
+				keccak_bram_addr = keccak_bram_addr;
 				flag = 0;
 				counter = counter;
-				old_counter = 0;
+				next_counter = next_counter;
 			end
 			default:
 			begin
@@ -1088,11 +1128,12 @@
 				keccak_bram_addr = 0;
 				flag = 0;
 				counter = 0;
-				old_counter = 0;
+			//	old_counter = 0;
 			end
-        endcase	
-	
+        endcase
 	end
+
+
 	
 	
 	
