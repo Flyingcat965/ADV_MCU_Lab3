@@ -782,7 +782,7 @@
 	// Add user logic here
 	
 	//state machine state clocked transition
-	always@(negedge axi_clk)
+	always@(posedge S_AXI_ACLK)
 	begin
 		if(axi_rst == 0 || keccak_reset == 1)
 		begin
@@ -798,197 +798,199 @@
     reg [4:0] state ;
 	reg [4:0] next_state; */
 	//state transition logic
-		always@(*)
+	always@(negedge S_AXI_ACLK)
 	begin
 		case(state)
 			rst:
 			begin
 				if(axi_rst == 0 || keccak_reset == 1)
-					next_state = rst;
+					next_state <= rst;
 				else
-					next_state = detect;
+					next_state <= detect;
 
 			end
 			detect:
 			begin
 				if(axi_start_keccak == 1)
-					next_state = read1;
+					next_state <= read1;
 				else
-					next_state = detect;
+					next_state <= detect;
 			end
 			read1:
 			begin
 				if(bram_complete == 0)
-					next_state = read1;
+					next_state <= read1;
 				else 
-					next_state = read_refresh1;
+					next_state <= read_refresh1;
 			end
 			read_refresh1:
 			begin
 				if(flag)
-					next_state = pad;
+					next_state <= pad;
 				else
-					next_state = between_read;
+					next_state <= between_read;
 			end
 			between_read:
 			begin
-				next_state = read2;
+				next_state <= read2;
 			end
 			read2:
 			begin
 				if(bram_complete == 0)
-					next_state = read2;
+					next_state <= read2;
 				else
-					next_state = read_refresh2;
+					next_state <= read_refresh2;
 
 			end
 			read_refresh2:
 			begin
 				if(flag)
-					next_state = send_last;
+					next_state <= send_last;
 				else
-					next_state = send;
+					next_state <= send;
 			end
 			send:
 			begin
 				if(buffer_full == 1)
-					next_state = checkfull;
+					next_state <= checkfull;
 				else
-					next_state = read1;
+					next_state <=  read1;
 			end
 			checkfull:
 			begin
 				if(buffer_full == 1)
-					next_state = checkfull;
+					next_state <= checkfull;
 				else
-					next_state = read1;
+					next_state <= read1;
 			end
 			pad:
 			begin
-				next_state = send_last;
+				next_state <= send_last;
 
 			end
 			send_last:
 			begin
 				if(buffer_full == 1)
-					next_state = checkfull_l;
+					next_state <= checkfull_l;
 				else if(byte_num != 0)
-					next_state = idle;
+					next_state <= idle;
 				else
-					next_state = sendempty;
+					next_state <= sendempty;
 			end
 			checkfull_l:
 			begin
 				if(buffer_full == 1)
-					next_state = checkfull_l;
+					next_state <= checkfull_l;
 				else if(byte_num != 0)
-					next_state = idle;
+					next_state <= idle;
 				else
-					next_state = sendempty;
+					next_state <= sendempty;
 			end
 			sendempty:
 			begin
 				if(buffer_full == 1)
-					next_state = idle;
+					next_state <= idle;
 				else
-					next_state = idle;
+					next_state <= idle;
 
 			end
 			checkfull_e:
 			begin
 				if(buffer_full == 1)
-					next_state = checkfull_e;
+					next_state <= checkfull_e;
 				else
-					next_state = idle;
+					next_state <= idle;
 			end
 			idle:
 			begin
 				if(out_ready == 1 && axi_start_keccak != 1)
-					next_state = detect;
+					next_state <= detect;
 				else
-					next_state = idle;
+					next_state <= idle;
 			end
 			default:
 				begin
-				next_state = rst;
+				next_state <= rst;
 				end
         endcase
 	end
 
-	always@(state)
+	always@(negedge S_AXI_ACLK)
 	begin
 		case(state)
 			rst:
 			begin
-				reset = 1;
-				in = 0;
-				in_ready = 0;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = 0;
-				flag = 0;
-				counter = 0;
-				next_counter = 0;
+				reset <= 1;
+				in <= 0;
+				in_ready <= 0;
+				is_last <= 0;
+				keccak_start_read <= 0;
+				keccak_bram_addr <= 0;
+				flag <= 0;
+				counter <= 0;
+				next_counter <= 0;
 
 			end
 			detect:
 			begin
-				reset = 0;
-				keccak_bram_addr = keccak_bram_addr_start + counter;
-				problem = 0;
+				reset <= 0;
+				keccak_bram_addr <= keccak_bram_addr_start + counter;
+				problem <= 0;
 
 			end
 			idle:
 			begin				
-				in_ready = 0;
+				in_ready <= 0;
+				is_last <= 0;
 			end
 			read1:
 			begin
-				in_ready = 0;
-				keccak_start_read = 1;
+				in_ready <= 0;
+				keccak_start_read <= 1;
 				
-				next_counter = counter + 4;
+				next_counter <= counter + 4;
 
 				if(counter + 4 >= keccak_byte_total )
-					flag = 1;
+					flag <= 1;
 				else
-					flag = 0;
+					flag <= 0;
 
 			end
 			read_refresh1:
 			begin
 
-				in[63:32] = keccak_bram_read_data;
-				keccak_start_read = 0;
-				counter = next_counter;	
+				in[63:32] <= keccak_bram_read_data;
+				keccak_start_read <= 0;
+				counter <= next_counter;	
 	
 			end
 			between_read:
 			begin
 
-				keccak_bram_addr = keccak_bram_addr_start + counter;
+				keccak_bram_addr <= keccak_bram_addr_start + counter;
 				
 			end
 			read2:
 			begin
-				keccak_start_read = 1;
-				next_counter = counter + 4;
+				keccak_start_read <= 1;
+				next_counter <= counter + 4;
 
 				if(counter + 4  >= keccak_byte_total )
-					flag = 1;
+					flag <= 1;
 				else
-					flag = 0;
+					flag <= 0;
 			end
 			
 			read_refresh2:
 			begin
-				in[31:0] = keccak_bram_read_data;
-				keccak_start_read = 0;
-				counter = next_counter;
+				in[31:0] <= keccak_bram_read_data;
+				keccak_start_read <= 0;
+				counter <= next_counter;
 			end
 			send:
 			begin
-				in_ready = 1;
+				in_ready <= 1;
+				slv_reg16 <= in;
 
 			end
 			checkfull:
@@ -1002,11 +1004,11 @@
 			send_last:
 			begin
 				
-				in_ready = 1;
+				in_ready <= 1;
 				if(byte_num == 0)
-					is_last = 0;
+					is_last <= 0;
 				else
-					is_last = 1;
+					is_last <= 1;
 
 				
 			end
@@ -1017,9 +1019,9 @@
 			sendempty:
 			begin
 				
-				in = 0;
-				in_ready = 1;
-				is_last = 1;
+				in <= 0;
+				in_ready <= 1;
+				is_last <= 1;
 				
 			end
 			checkfull_e:
@@ -1028,16 +1030,16 @@
 			end
 			default:
 			begin
-				reset = 1;
-				in = 0;
-				in_ready = 0;
-				is_last = 0;
-				keccak_start_read = 0;
-				keccak_bram_addr = 0;
-				flag = 0;
-				counter = 0;
-			//	old_counter = 0;
-				problem = 32'hdeeddead;
+				reset <= 1;
+				in <= 0;
+				in_ready <= 0;
+				is_last <= 0;
+				keccak_start_read <= 0;
+				keccak_bram_addr <= 0;
+				flag <= 0;
+				counter <= 0;
+			//	old_counter <= 0;
+				problem <= 32'hdeeddead;
 			end
         endcase
 	end
