@@ -825,7 +825,11 @@
 			end
 			read_refresh1:
 			begin
-				if(flag)
+			    if(bram_complete == 1)
+			    begin
+			         next_state <= read_refresh1;
+			    end
+				else if(flag)
 					next_state <= pad;
 				else
 					next_state <= between_read;
@@ -844,7 +848,11 @@
 			end
 			read_refresh2:
 			begin
-				if(flag)
+                if(bram_complete == 1)
+			    begin
+			         next_state <= read_refresh2;
+			    end
+				else if(flag)
 					next_state <= send_last;
 				else
 					next_state <= send;
@@ -990,7 +998,7 @@
 			send:
 			begin
 				in_ready <= 1;
-				slv_reg16 <= in;
+			//	slv_reg16 <= in;
 
 			end
 			checkfull:
