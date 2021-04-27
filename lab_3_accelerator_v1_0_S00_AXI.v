@@ -190,7 +190,9 @@
 	//keccak IOs
 	wire 			clk = S_AXI_ACLK;
 	reg  			reset;
-	reg [63:0]		in;
+	wire [63:0]		in;
+	reg [31:0]      in0;
+	reg [31:0]      in1;
 	wire	[2:0]		byte_num;
 	reg				in_ready;
 	reg				is_last;
@@ -198,6 +200,7 @@
 	wire [511:0]	out;
 	wire 			out_ready;
 
+	assign in = {in0, in1};
 	assign keccak_byte_total      = slv_reg5;
 	assign byte_num = keccak_byte_total%8;
 	assign keccak_bram_addr_start = slv_reg6;
@@ -929,7 +932,8 @@
 			rst:
 			begin
 				reset <= 1;
-				in <= 0;
+				in0 <= 0;
+				in1 <= 0;
 				in_ready <= 0;
 				is_last <= 0;
 				keccak_start_read <= 0;
@@ -967,7 +971,7 @@
 			read_refresh1:
 			begin
 
-				in[63:32] <= keccak_bram_read_data;
+				in0 <= keccak_bram_read_data;
 				keccak_start_read <= 0;
 				counter <= next_counter;
 
@@ -991,7 +995,7 @@
 
 			read_refresh2:
 			begin
-				in[31:0] <= keccak_bram_read_data;
+				in1 <= keccak_bram_read_data;
 				keccak_start_read <= 0;
 				counter <= next_counter;
 			end
@@ -1027,7 +1031,8 @@
 			sendempty:
 			begin
 
-				in <= 0;
+				in0 <= 0;
+				in1 <= 0;
 				in_ready <= 1;
 				is_last <= 1;
 
@@ -1039,7 +1044,8 @@
 			default:
 			begin
 				reset <= 1;
-				in <= 0;
+				in0 <= 0;
+				in1 <= 0;
 				in_ready <= 0;
 				is_last <= 0;
 				keccak_start_read <= 0;
